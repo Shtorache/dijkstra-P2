@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drone Routes - Maricá</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="{% static 'petpathspaths/css/style.css' %}">
+</head>
+<body>
+    <h1>Map - Trace sua rota de drone</h1>
+    <div id="map" style="height: 600px;"></div>
+    <button id="calc-route">Calcular Rota</button>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const dangerZones = {{ zones|safe }};
+    </script>
+    <script src="{% static 'petpaths/js/map.js' %}"></script>
+</body>
+</html>
