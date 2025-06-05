@@ -34,3 +34,7 @@ def route_api(request):
 
     serializer = RouteSerializer({'path': coords})
     return JsonResponse(serializer.data)
+
+
+def home_view(request):
+    return render(request, 'petpaths/home.html')
