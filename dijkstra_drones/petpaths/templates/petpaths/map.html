@@ -1,14 +1,16 @@
 {% load static %}
+<link rel="stylesheet" href="{% static 'petpaths/css/style.css' %}">
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Drone Routes - Maricá</title>
+    <title>Drone Routes - Mapa</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="{% static 'petpathspaths/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'petpaths/css/style.css' %}">
 </head>
 <body>
-    <h1>Map - Trace sua rota de drone</h1>
+    <h1>Mapa - Trace sua Rota de Drone</h1>
     <div id="map" style="height: 600px;"></div>
     <button id="calc-route">Calcular Rota</button>
 
