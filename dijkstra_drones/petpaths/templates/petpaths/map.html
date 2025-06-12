@@ -2,159 +2,253 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <title>Mapa com Rota de 2 Pontos</title>
+    <title>Rota de Drone - Zonas de Perigo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- Leaflet CSS (sem integrity para evitar erro de hash) -->
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-        crossorigin=""
-    />
-
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" crossorigin="" />
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-            color: white;
-            text-align: center;
-            padding: 50px 20px;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0cdf8, #1d2b64);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
         }
-
         h1 {
-            font-size: 3em;
-            margin-bottom: 0.3em;
+            font-size: 2.5rem;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
         }
-
-        p {
-            font-size: 1.2em;
-            max-width: 700px;
-            margin: 0 auto 2em auto;
-        }
-
-        #map {
-            height: 500px;
+        #controls {
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 960px;
             width: 100%;
-            max-width: 900px;
-            margin: 0 auto 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
-
-        #clicked-coords {
-            margin-top: 15px;
-            font-size: 1.1em;
+        .input-group {
+            position: relative;
+            flex: 1 1 250px;
+            display: flex;
+            flex-direction: column;
         }
-
-        .btn {
-            background-color: #00b894;
-            color: white;
-            padding: 15px 30px;
-            border: none;
+        .input-group label {
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: #555;
+        }
+        .input-group input {
+            padding: 10px 12px;
+            border: 2px solid #ddd;
             border-radius: 8px;
-            text-decoration: none;
-            font-size: 1em;
-            transition: background 0.3s;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #896eff;
+        }
+        .suggestions {
+            position: absolute;
+            top: 100%; left: 0; right: 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
+            border-radius: 0 0 8px 8px;
+            z-index: 1000;
+            display: none;
+        }
+        .suggestions.active { display: block; }
+        .suggestions li {
+            padding: 8px 12px;
             cursor: pointer;
         }
-
-        .btn:hover {
-            background-color: #019875;
+        .suggestions li:hover {
+            background: #f0f0f0;
+        }
+        .buttons-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .buttons-row button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.3s;
+        }
+        .loc-btn {
+            background: #ffe3e3;
+            color: #e63946;
+        }
+        .loc-btn:hover {
+            background: #ffb3b3;
+        }
+        .confirm-btn {
+            background: #e0f7fa;
+            color: #00796b;
+        }
+        .confirm-btn:hover {
+            background: #b2ebf2;
+        }
+        #route-btn {
+            padding: 12px 24px;
+            background: #6a1b9a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #route-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+        #map {
+            height: 600px;
+            width: 100%; max-width: 960px;
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        #clicked-coords {
+            font-size: 1.1rem;
+            color: #fff;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Mapa Interativo</h1>
-    <p>Selecione até 2 pontos no mapa para traçar uma rota. Clique em um marcador para removê-lo.</p>
-
+    <h1>Rota de Drone Evitando Zonas de Perigo</h1>
+    <div id="controls">
+        <!-- Origem -->
+        <div class="input-group">
+            <label for="addressA"><i class="fa-solid fa-location-dot"></i> Origem</label>
+            <input type="text" id="addressA" placeholder="Digite endereço" autocomplete="off" />
+            <ul class="suggestions" id="suggestionsA"></ul>
+            <div class="buttons-row">
+                <button class="loc-btn" onclick="useCurrentLocation('A')"><i class="fa-solid fa-map-pin"></i> Usar minha localização</button>
+                <button class="confirm-btn" onclick="confirmPoint('A')"><i class="fa-solid fa-check"></i> Confirmar A</button>
+            </div>
+        </div>
+        <!-- Destino -->
+        <div class="input-group">
+            <label for="addressB"><i class="fa-solid fa-flag"></i> Destino</label>
+            <input type="text" id="addressB" placeholder="Digite endereço" autocomplete="off" />
+            <ul class="suggestions" id="suggestionsB"></ul>
+            <div class="buttons-row">
+                <button class="loc-btn" onclick="useCurrentLocation('B')"><i class="fa-solid fa-map-pin"></i> Usar minha localização</button>
+                <button class="confirm-btn" onclick="confirmPoint('B')"><i class="fa-solid fa-check"></i> Confirmar B</button>
+            </div>
+        </div>
+        <button id="route-btn" type="button" onclick="calculateRoute()" disabled><i class="fa-solid fa-paper-plane"></i> Traçar Rota</button>
+    </div>
+    <div id="clicked-coords">Selecione os pontos A e B e confirme.</div>
     <div id="map"></div>
-    <div id="clicked-coords">Clique no mapa para selecionar 2 pontos.</div>
 
     <!-- Leaflet JS -->
-    <script
-        src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        crossorigin="">
-    </script>
-
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" crossorigin=""></script>
     <script>
-        const map = L.map('map').setView([-22.9456, -42.1805], 13);
-
-        // Corrige renderização do mapa
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 200);
-
-        // Camada base
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
+        const map = L.map('map').setView([-22.9456, -42.1805], 12);
+        setTimeout(() => map.invalidateSize(), 200);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
         // Zonas de perigo
         const dangerZones = [
-            { latitude: -22.947, longitude: -42.182, name: "Zona de Perigo 1" },
-            { latitude: -22.944, longitude: -42.178, name: "Zona de Perigo 2" }
+            { latitude: -22.920047091859452, longitude: -42.82062436048655, name: "Prefeitura Maricá" },
+            { latitude: -22.91658432428782, longitude: -42.81957082666992, name: "Delegacia Maricá" },
+            { latitude: -22.964373434795053, longitude: -42.96892105662349, name: "Prefeitura Itaipuaçu" },
+            { latitude: -22.956781829473464, longitude: -42.97852005047708, name: "DPO Barroco Itaipuaçu" },
+            { latitude: -22.904671410467373, longitude: -42.93597387603477, name: "DPO Inoã" },
+            { latitude: -22.904726480053345, longitude: -42.92513685690194, name: "MCMV Inoã" },
+            { latitude: -22.945660990073286, longitude: -42.95307794412505, name: "MCMV Itaipuaçu" }
         ];
-
         dangerZones.forEach(z => {
-            L.circle([z.latitude, z.longitude], {
-                radius: 200,
-                color: 'red',
-                fillOpacity: 0.4
-            }).addTo(map).bindPopup(z.name);
+            L.circle([z.latitude, z.longitude], { radius: 200, color: 'red', fillOpacity: 0.4 })
+             .addTo(map).bindPopup(z.name);
         });
 
-        let points = [];
-        let markers = [];
-        let routeLine = null;
+        const suggestMap = { A: {}, B: {} };
+        let points = { A: null, B: null }, markers = {}, routeLine = null;
 
-        function drawRouteLine() {
-            if (routeLine) {
-                map.removeLayer(routeLine);
-                routeLine = null;
-            }
-            if (points.length === 2) {
-                const latlngs = points.map(p => [p.latitude, p.longitude]);
-                routeLine = L.polyline(latlngs, { color: 'blue', weight: 4 }).addTo(map);
-            }
+        ['A','B'].forEach(field => {
+            const input = document.getElementById(`address${field}`);
+            const sugg = document.getElementById(`suggestions${field}`);
+            input.addEventListener('input', async () => {
+                const term = input.value.trim();
+                if (term.length < 3) { sugg.classList.remove('active'); return; }
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(term)}`);
+                const data = await res.json();
+                sugg.innerHTML = '';
+                suggestMap[field] = {};
+                data.slice(0,5).forEach(item => {
+                    suggestMap[field][item.display_name] = { latitude: parseFloat(item.lat), longitude: parseFloat(item.lon) };
+                    const li = document.createElement('li');
+                    li.textContent = item.display_name;
+                    li.onclick = () => { input.value = item.display_name; sugg.classList.remove('active'); };
+                    sugg.appendChild(li);
+                });
+                sugg.classList.add('active');
+            });
+            document.addEventListener('click', e => { if (!input.contains(e.target)) sugg.classList.remove('active'); });
+        });
+
+        function useCurrentLocation(field) {
+            if (!navigator.geolocation) return alert('Geolocalização não suportada.');
+            navigator.geolocation.getCurrentPosition(pos => {
+                const name = 'Minha localização';
+                suggestMap[field][name] = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+                document.getElementById(`address${field}`).value = name;
+            }, () => alert('Não foi possível obter localização.'));
         }
 
-        map.on('click', function(e) {
-            if (points.length >= 2) return;
+        function confirmPoint(field) {
+            const input = document.getElementById(`address${field}`);
+            const pt = suggestMap[field][input.value];
+            if (!pt) return alert('Selecione um item válido da lista.');
+            if (markers[field]) map.removeLayer(markers[field]);
+            points[field] = pt;
+            markers[field] = L.marker([pt.latitude, pt.longitude]).addTo(map);
+            map.setView([pt.latitude, pt.longitude], 14);
+            document.getElementById('route-btn').disabled = !(points.A && points.B);
+            document.getElementById('clicked-coords').textContent = points.A && !points.B
+                ? 'Ponto A confirmado. Selecione e confirme o ponto B.'
+                : points.A && points.B
+                ? 'Pontos A e B confirmados.'
+                : 'Confirme o Ponto A.';
+        }
 
-            const { lat, lng } = e.latlng;
-            const point = { latitude: lat, longitude: lng };
-            points.push(point);
-
-            const marker = L.marker([lat, lng]).addTo(map);
-            markers.push(marker);
-
-            const coordDisplay = document.getElementById('clicked-coords');
-            if (coordDisplay) {
-                coordDisplay.innerText = `Última área selecionada: Latitude ${lat.toFixed(5)}, Longitude ${lng.toFixed(5)}`;
-            }
-
-            marker.on('click', function() {
-                const index = markers.indexOf(marker);
-                if (index !== -1) {
-                    map.removeLayer(marker);
-                    markers.splice(index, 1);
-                    points.splice(index, 1);
-                    drawRouteLine();
-
-                    if (coordDisplay) {
-                        if (points.length === 0) {
-                            coordDisplay.innerText = 'Clique no mapa para selecionar 2 pontos.';
-                        } else {
-                            const p = points[points.length - 1];
-                            coordDisplay.innerText = `Última área selecionada: Latitude ${p.latitude.toFixed(5)}, Longitude ${p.longitude.toFixed(5)}`;
-                        }
-                    }
-                }
-            });
-
-            drawRouteLine();
-        });
+        async function calculateRoute() {
+            if (routeLine) map.removeLayer(routeLine);
+            const res = await fetch("{% url 'petpaths:route_api' %}", { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'}, body:JSON.stringify({ points: [points.A, points.B] }) });
+            const { path } = await res.json();
+            if (!path.length) return alert('Rota inválida');
+            routeLine = L.polyline(path, { color:'#4a148c', weight: 5 }).addTo(map);
+            map.fitBounds(routeLine.getBounds(), { padding: [50,50] });
+            document.getElementById('clicked-coords').textContent = 'Rota traçada com sucesso.';
+        }
     </script>
 </body>
 </html>
-
