@@ -13,132 +13,166 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #e0cdf8, #1d2b64);
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 2.5rem;
-            color: #fff;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
-            margin-bottom: 20px;
-        }
-        #controls {
-            background: rgba(255,255,255,0.9);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            max-width: 960px;
-            width: 100%;
-        }
-        .input-group {
-            position: relative;
-            flex: 1 1 250px;
-            display: flex;
-            flex-direction: column;
-        }
-        .input-group label {
-            font-size: 0.9rem;
-            margin-bottom: 6px;
-            color: #555;
-        }
-        .input-group input {
-            padding: 10px 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        .input-group input:focus {
-            border-color: #896eff;
-        }
-        .suggestions {
-            position: absolute;
-            top: 100%; left: 0; right: 0;
-            background: #fff;
-            border: 1px solid #ddd;
-            max-height: 150px;
-            overflow-y: auto;
-            border-radius: 0 0 8px 8px;
-            z-index: 1000;
-            display: none;
-        }
-        .suggestions.active { display: block; }
-        .suggestions li {
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-        .suggestions li:hover {
-            background: #f0f0f0;
-        }
-        .buttons-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .buttons-row button {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: background 0.3s;
-        }
-        .loc-btn {
-            background: #ffe3e3;
-            color: #e63946;
-        }
-        .loc-btn:hover {
-            background: #ffb3b3;
-        }
-        .confirm-btn {
-            background: #e0f7fa;
-            color: #00796b;
-        }
-        .confirm-btn:hover {
-            background: #b2ebf2;
-        }
-        #route-btn {
-            padding: 12px 24px;
-            background: #6a1b9a;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        #route-btn:disabled {
-            background: #aaa;
-            cursor: not-allowed;
-        }
-        #map {
-            height: 600px;
-            width: 100%; max-width: 960px;
-            margin: 20px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-        }
-        #clicked-coords {
-            font-size: 1.1rem;
-            color: #fff;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
-            margin-bottom: 20px;
-        }
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+}
+
+h1 {
+    font-size: 3em;
+    margin-bottom: 0.5em;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+}
+
+#controls {
+    background: rgba(255,255,255,0.15);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    max-width: 960px;
+    width: 100%;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.input-group {
+    position: relative;
+    flex: 1 1 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 1em;
+    margin-bottom: 8px;
+    color: rgba(255,255,255,0.8);
+}
+
+.input-group input {
+    padding: 12px 15px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    font-size: 1em;
+    color: white;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.input-group input:focus {
+    border-color: #00b894;
+    background: rgba(255,255,255,0.2);
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%; 
+    left: 0; 
+    right: 0;
+    background: #2c5364;
+    border: 1px solid rgba(255,255,255,0.2);
+    max-height: 150px;
+    overflow-y: auto;
+    border-radius: 0 0 8px 8px;
+    z-index: 1000;
+    display: none;
+}
+
+.suggestions.active { display: block; }
+
+.suggestions li {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.suggestions li:hover {
+    background: rgba(0,184,148,0.3);
+}
+
+.buttons-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.btn {
+    background-color: #00b894;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.btn:hover {
+    background-color: #019875;
+}
+
+.loc-btn {
+    background: rgba(211, 208, 208, 0.9);
+}
+
+.loc-btn:hover {
+    background: rgba(230, 57, 70, 1);
+}
+
+.confirm-btn {
+    background: rgba(0, 121, 107, 0.9);
+}
+
+.confirm-btn:hover {
+    background: rgba(0, 121, 107, 1);
+}
+
+#route-btn {
+    padding: 15px 30px;
+    background: #00b894;
+    font-size: 1.1em;
+    margin-top: 20px;
+}
+
+#route-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+#map {
+    height: 600px;
+    width: 100%; 
+    max-width: 960px;
+    margin: 30px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+#clicked-coords {
+    font-size: 1.2em;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+    margin: 15px 0;
+    background: rgba(0,0,0,0.2);
+    padding: 10px 20px;
+    border-radius: 8px;
+}
     </style>
 </head>
 <body>
