@@ -74,8 +74,8 @@
 
         .suggestions {
             position: absolute;
-            top: 100%; 
-            left: 0; 
+            top: 100%;
+            left: 0;
             right: 0;
             background: #2c5364;
             border: 1px solid rgba(255,255,255,0.2);
@@ -163,7 +163,7 @@
 
         #map {
             height: 600px;
-            width: 100%; 
+            width: 100%;
             max-width: 960px;
             margin: 30px 0;
             border-radius: 12px;
@@ -213,6 +213,8 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/gh/jieter/Leaflet.ellipse@latest/dist/leaflet.ellipse.js"></script>
+
     <script>
         const map = L.map('map').setView([-22.9456, -42.1805], 12);
         setTimeout(() => map.invalidateSize(), 200);
@@ -220,7 +222,7 @@
 
         // Zonas de perigo
         const dangerZones = [
-            { latitude: -22.920047091859452, longitude: -42.82062436048655, name: "Prefeitura Maricá" },
+            { latitude: -22.920047091859452, longitude: -42.82992431041655, name: "Prefeitura Maricá" },
             { latitude: -22.91658432428782, longitude: -42.81957082666992, name: "Delegacia Maricá" },
             { latitude: -22.964373434795053, longitude: -42.96892105662349, name: "Prefeitura Itaipuaçu" },
             { latitude: -22.956781829473464, longitude: -42.97852005047708, name: "DPO Barroco Itaipuaçu" },
@@ -229,34 +231,55 @@
             { latitude: -22.945660990073286, longitude: -42.95307794412505, name: "MCMV Itaipuaçu" }
         ];
         dangerZones.forEach(z => {
-            L.circle([z.latitude, z.longitude], { radius: 200, color: 'red', fillOpacity: 0.4 })
-             .addTo(map).bindPopup(z.name);
+            const isPrefeitura = z.name === "Prefeitura Maricá";
+            L.circle([z.latitude, z.longitude], {
+                radius: isPrefeitura ? 200 * Math.sqrt(2) : 200,
+                color: 'red',
+                fillOpacity: 0.4
+            }).addTo(map).bindPopup(z.name);
         });
-
+        
         const suggestMap = { A: {}, B: {} };
         let points = { A: null, B: null }, markers = {}, routeLine = null;
-
+        
         ['A','B'].forEach(field => {
             const input = document.getElementById(`address${field}`);
             const sugg = document.getElementById(`suggestions${field}`);
+        
             input.addEventListener('input', async () => {
                 const term = input.value.trim();
-                if (term.length < 3) { sugg.classList.remove('active'); return; }
+                if (term.length < 3) {
+                    sugg.classList.remove('active');
+                    return;
+                }
+        
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(term)}`);
                 const data = await res.json();
                 sugg.innerHTML = '';
                 suggestMap[field] = {};
-                data.slice(0,5).forEach(item => {
-                    suggestMap[field][item.display_name] = { latitude: parseFloat(item.lat), longitude: parseFloat(item.lon) };
+        
+                data.slice(0, 5).forEach(item => {
+                    suggestMap[field][item.display_name] = {
+                        latitude: parseFloat(item.lat),
+                        longitude: parseFloat(item.lon)
+                    };
                     const li = document.createElement('li');
                     li.textContent = item.display_name;
-                    li.onclick = () => { input.value = item.display_name; sugg.classList.remove('active'); };
+                    li.onclick = () => {
+                        input.value = item.display_name;
+                        sugg.classList.remove('active');
+                    };
                     sugg.appendChild(li);
                 });
+        
                 sugg.classList.add('active');
             });
-            document.addEventListener('click', e => { if (!input.contains(e.target)) sugg.classList.remove('active'); });
+        
+            document.addEventListener('click', e => {
+                if (!input.contains(e.target)) sugg.classList.remove('active');
+            });
         });
+
 
         function useCurrentLocation(field) {
             if (!navigator.geolocation) return alert('Geolocalização não suportada.');
@@ -285,7 +308,7 @@
 
         async function calculateRoute() {
             if (routeLine) map.removeLayer(routeLine);
-        
+
             const res = await fetch("{% url 'petpaths:route_api' %}", {
                 method: 'POST',
                 headers: {
@@ -294,14 +317,14 @@
                 },
                 body: JSON.stringify({ points: [points.A, points.B] })
             });
-        
+
             const { path } = await res.json();
             if (!path.length) return alert('Rota inválida');
-        
+
             // Criar a linha no mapa
             routeLine = L.polyline(path, { color: '#4a148c', weight: 5 }).addTo(map);
             map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
-        
+
             // Calcular distância total da rota
             let totalDistance = 0;
             for (let i = 1; i < path.length; i++) {
@@ -309,9 +332,9 @@
                 const p2 = L.latLng(path[i][0], path[i][1]);
                 totalDistance += p1.distanceTo(p2); // em metros
             }
-        
+
             const distanceKm = (totalDistance / 1000).toFixed(2);
-        
+
             // Exibir distância no texto
             document.getElementById('clicked-coords').textContent =
                 `Rota traçada com sucesso. Distância aproximada: ${distanceKm} km.`;
