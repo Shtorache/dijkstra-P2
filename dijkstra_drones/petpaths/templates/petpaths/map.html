@@ -1,21 +1,159 @@
-{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Drone Routes - Maricá</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="{% static 'petpathspaths/css/style.css' %}">
+    <meta charset="UTF-8" />
+    <title>Mapa com Rota de 2 Pontos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS (sem integrity para evitar erro de hash) -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        crossorigin=""
+    />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color: white;
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 0.3em;
+        }
+
+        p {
+            font-size: 1.2em;
+            max-width: 700px;
+            margin: 0 auto 2em auto;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #clicked-coords {
+            margin-top: 15px;
+            font-size: 1.1em;
+        }
+
+        .btn {
+            background-color: #00b894;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #019875;
+        }
+    </style>
 </head>
 <body>
-    <h1>Map - Trace sua rota de drone</h1>
-    <div id="map" style="height: 600px;"></div>
-    <button id="calc-route">Calcular Rota</button>
+    <h1>Mapa Interativo</h1>
+    <p>Selecione até 2 pontos no mapa para traçar uma rota. Clique em um marcador para removê-lo.</p>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        const dangerZones = {{ zones|safe }};
+    <div id="map"></div>
+    <div id="clicked-coords">Clique no mapa para selecionar 2 pontos.</div>
+
+    <!-- Leaflet JS -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        crossorigin="">
     </script>
-    <script src="{% static 'petpaths/js/map.js' %}"></script>
+
+    <script>
+        const map = L.map('map').setView([-22.9456, -42.1805], 13);
+
+        // Corrige renderização do mapa
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 200);
+
+        // Camada base
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Zonas de perigo
+        const dangerZones = [
+            { latitude: -22.947, longitude: -42.182, name: "Zona de Perigo 1" },
+            { latitude: -22.944, longitude: -42.178, name: "Zona de Perigo 2" }
+        ];
+
+        dangerZones.forEach(z => {
+            L.circle([z.latitude, z.longitude], {
+                radius: 200,
+                color: 'red',
+                fillOpacity: 0.4
+            }).addTo(map).bindPopup(z.name);
+        });
+
+        let points = [];
+        let markers = [];
+        let routeLine = null;
+
+        function drawRouteLine() {
+            if (routeLine) {
+                map.removeLayer(routeLine);
+                routeLine = null;
+            }
+            if (points.length === 2) {
+                const latlngs = points.map(p => [p.latitude, p.longitude]);
+                routeLine = L.polyline(latlngs, { color: 'blue', weight: 4 }).addTo(map);
+            }
+        }
+
+        map.on('click', function(e) {
+            if (points.length >= 2) return;
+
+            const { lat, lng } = e.latlng;
+            const point = { latitude: lat, longitude: lng };
+            points.push(point);
+
+            const marker = L.marker([lat, lng]).addTo(map);
+            markers.push(marker);
+
+            const coordDisplay = document.getElementById('clicked-coords');
+            if (coordDisplay) {
+                coordDisplay.innerText = `Última área selecionada: Latitude ${lat.toFixed(5)}, Longitude ${lng.toFixed(5)}`;
+            }
+
+            marker.on('click', function() {
+                const index = markers.indexOf(marker);
+                if (index !== -1) {
+                    map.removeLayer(marker);
+                    markers.splice(index, 1);
+                    points.splice(index, 1);
+                    drawRouteLine();
+
+                    if (coordDisplay) {
+                        if (points.length === 0) {
+                            coordDisplay.innerText = 'Clique no mapa para selecionar 2 pontos.';
+                        } else {
+                            const p = points[points.length - 1];
+                            coordDisplay.innerText = `Última área selecionada: Latitude ${p.latitude.toFixed(5)}, Longitude ${p.longitude.toFixed(5)}`;
+                        }
+                    }
+                }
+            });
+
+            drawRouteLine();
+        });
+    </script>
 </body>
 </html>
