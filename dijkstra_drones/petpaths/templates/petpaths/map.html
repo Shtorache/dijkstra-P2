@@ -242,13 +242,38 @@
 
         async function calculateRoute() {
             if (routeLine) map.removeLayer(routeLine);
-            const res = await fetch("{% url 'petpaths:route_api' %}", { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'}, body:JSON.stringify({ points: [points.A, points.B] }) });
+        
+            const res = await fetch("{% url 'petpaths:route_api' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ points: [points.A, points.B] })
+            });
+        
             const { path } = await res.json();
             if (!path.length) return alert('Rota inválida');
-            routeLine = L.polyline(path, { color:'#4a148c', weight: 5 }).addTo(map);
-            map.fitBounds(routeLine.getBounds(), { padding: [50,50] });
-            document.getElementById('clicked-coords').textContent = 'Rota traçada com sucesso.';
+        
+            // Criar a linha no mapa
+            routeLine = L.polyline(path, { color: '#4a148c', weight: 5 }).addTo(map);
+            map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+        
+            // Calcular distância total da rota
+            let totalDistance = 0;
+            for (let i = 1; i < path.length; i++) {
+                const p1 = L.latLng(path[i - 1][0], path[i - 1][1]);
+                const p2 = L.latLng(path[i][0], path[i][1]);
+                totalDistance += p1.distanceTo(p2); // em metros
+            }
+        
+            const distanceKm = (totalDistance / 1000).toFixed(2);
+        
+            // Exibir distância no texto
+            document.getElementById('clicked-coords').textContent =
+                `Rota traçada com sucesso. Distância aproximada: ${distanceKm} km.`;
         }
+
     </script>
 </body>
 </html>
